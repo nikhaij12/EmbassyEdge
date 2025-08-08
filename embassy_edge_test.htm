@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chatbot Integration</title>
+  </head>
+  <body>
+    <h1>Welcome to the Embassy Edge Demo</h1>
+    <p>The Chatbot should load shortly.</p>
+
+    <script>
+      const FormExtension = {
+        name: "Forms",
+        type: "response",
+        match: ({ trace }) =>
+          trace.type === "Custom_Form" || trace.payload?.name === "Custom_Form",
+        render: ({ trace, element }) => {
+          const formContainer = document.createElement("form");
+
+          formContainer.innerHTML = `
+          <style>
+            form {
+              font-family: UCity Pro;
+              max-width: 400px;
+              margin: auto;
+            }
+            label {
+              font-size: 0.9em;
+              color: #000;
+              margin-bottom: 4px;
+              display: block;
+            }
+            input[type="text"],
+            input[type="email"],
+            input[type="tel"] {
+              width: 100%;
+              border: none;
+              border-bottom: 1px solid #ccc;
+              background: transparent;
+              padding: 10px 5px;
+              margin-bottom: 20px;
+              font-size: 1em;
+              transition: border-color 0.3s;
+              color: #000;
+              font-family: sans-serif;
+            }
+            input:focus {
+              border-bottom: 1px solid #D77957;
+              outline: none;
+            }
+            .invalid {
+              border-color: red !important;
+            }
+            .submit {
+              background: linear-gradient(to right, #D77957, #D87C5A);
+              border: none;
+              color: white;
+              padding: 12px;
+              border-radius: 5px;
+              width: 100%;
+              font-size: 1em;
+              cursor: pointer;
+              transition: background 0.3s;
+            }
+            .submit:hover {
+              background: linear-gradient(to right, #D87C5A, #CE5B31);
+            }
+          </style>
+
+          <label for="name">Name</label>
+          <input type="text" class="name" name="name" required pattern="[A-Za-z\\s]+" title="Only letters and spaces allowed">
+
+          <label for="email">Email</label>
+          <input type="email" class="email" name="email" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}$" title="Invalid email address">
+
+          <label for="phone">Phone</label>
+          <input type="tel" class="phone" name="phone" pattern="^\\d{7,15}$" title="Enter a valid phone number">
+
+          <input type="submit" class="submit" value="Submit">
+        `;
+
+          formContainer.addEventListener("input", function () {
+            const inputs = formContainer.querySelectorAll("input");
+            const email = formContainer.querySelector(".email");
+            if (email) email.value = email.value.toLowerCase();
+
+            inputs.forEach((input) => {
+              if (!input.value.trim() || input.checkValidity()) {
+                input.classList.remove("invalid");
+              }
+            });
+          });
+
+          formContainer.addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            const name = formContainer.querySelector(".name");
+            const email = formContainer.querySelector(".email");
+            const phone = formContainer.querySelector(".phone");
+
+            if (email) email.value = email.value.toLowerCase();
+
+            let hasError = false;
+            [name, email].forEach((input) => {
+              if (!input.checkValidity()) {
+                input.classList.add("invalid");
+                hasError = true;
+              }
+            });
+
+            if (hasError) return;
+
+            formContainer.querySelector(".submit").remove();
+
+            window.voiceflow.chat.interact({
+              type: "complete",
+              payload: {
+                name: name.value.trim(),
+                email: email.value.trim(),
+                phone: phone.value.trim(),
+              },
+            });
+          });
+
+          (element || document.body).appendChild(formContainer);
+        },
+      };
+    </script>
+
+    <script type="text/javascript">
+      (function (d, t) {
+        var v = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+        v.onload = function () {
+          const url = window.location.href;
+          window.voiceflow.chat.load({
+            verify: { projectID: "6880c6bb3411896930bfe4c6" },
+            url: "https://general-runtime.voiceflow.com",
+            versionID: "production",
+            launch: {
+              event: {
+                type: "launch",
+                payload: {
+                  browser_url: url,
+                },
+              },
+            },
+            assistant: {
+              extensions: [FormExtension],
+            },
+            voice: {
+              url: "https://runtime-api.voiceflow.com",
+            },
+          });
+        };
+        v.src = "https://cdn.voiceflow.com/widget-next/bundle.mjs";
+        v.type = "text/javascript";
+        s.parentNode.insertBefore(v, s);
+      })(document, "script");
+    </script>
+  </body>
+</html>
+
