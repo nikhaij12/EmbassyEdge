@@ -19,71 +19,128 @@
           const formContainer = document.createElement("form");
 
           formContainer.innerHTML = `
-          <style>
-            form {
-              font-family: UCity Pro;
-              max-width: 400px;
-              margin: auto;
-            }
-            label {
-              font-size: 0.9em;
-              color: #000;
-              margin-bottom: 4px;
-              display: block;
-            }
-            input[type="text"],
-            input[type="email"],
-            input[type="tel"] {
-              width: 100%;
-              border: none;
-              border-bottom: 1px solid #ccc;
-              background: transparent;
-              padding: 10px 5px;
-              margin-bottom: 20px;
-              font-size: 1em;
-              transition: border-color 0.3s;
-              color: #000;
-              font-family: sans-serif;
-            }
-            input:focus {
-              border-bottom: 1px solid #D77957;
-              outline: none;
-            }
-            .invalid {
-              border-color: red !important;
-            }
-            .submit {
-              background: linear-gradient(to right, #D77957, #D87C5A);
-              border: none;
-              color: white;
-              padding: 12px;
-              border-radius: 5px;
-              width: 100%;
-              font-size: 1em;
-              cursor: pointer;
-              transition: background 0.3s;
-            }
-            .submit:hover {
-              background: linear-gradient(to right, #D87C5A, #CE5B31);
-            }
-          </style>
+            <style>
+              form {
+                font-family: UCity Pro, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+                max-width: 400px;
+                margin: auto;
+              }
+              label {
+                font-size: 0.9em;
+                color: #000;
+                margin-bottom: 4px;
+                display: block;
+              }
+              input[type="text"],
+              input[type="email"],
+              input[type="tel"],
+              select {
+                width: 100%;
+                border: none;
+                border-bottom: 1px solid #ccc;
+                background: transparent;
+                padding: 10px 5px;
+                margin-bottom: 20px;
+                font-size: 1em;
+                transition: border-color 0.3s;
+                color: #000;
+                font-family: inherit;
+                appearance: none;
+              }
+              input:focus, select:focus {
+                border-bottom: 1px solid #D77957;
+                outline: none;
+              }
 
-          <label for="name">Name</label>
-          <input type="text" class="name" name="name" required pattern="[A-Za-z\\s]+" title="Only letters and spaces allowed">
+              /* Placeholders (match the light grey of +91) */
+              ::placeholder { color: #9aa0a6; opacity: 1; }
+              :-ms-input-placeholder { color: #9aa0a6; }
+              ::-ms-input-placeholder { color: #9aa0a6; }
 
-          <label for="email">Email</label>
-          <input type="email" class="email" name="email" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}$" title="Invalid email address">
+              /* Make the SELECT show a light-grey “placeholder” when no value chosen */
+              select:required:invalid { color: #9aa0a6; }
+              option[value=""] { color: #9aa0a6; }   /* the placeholder option */
+              option { color: #000; }               /* real options are black */
+              /* Hide the placeholder option in the dropdown list */
+              option[disabled][value=""] { display: none; }
 
-          <label for="phone">Phone</label>
-          <input type="tel" class="phone" name="phone" pattern="^\\d{7,15}$" title="Enter a valid phone number">
+              .invalid { border-color: red !important; }
+              .hint {
+                font-size: 0.78em;
+                color: #666;
+                margin-top: -14px;
+                margin-bottom: 14px;
+              }
+              .submit {
+                background: linear-gradient(to right, #D77957, #D87C5A);
+                border: none;
+                color: white;
+                padding: 12px;
+                border-radius: 5px;
+                width: 100%;
+                font-size: 1em;
+                cursor: pointer;
+                transition: background 0.3s;
+              }
+              .submit:hover {
+                background: linear-gradient(to right, #D87C5A, #CE5B31);
+              }
+            </style>
 
-          <input type="submit" class="submit" value="Submit">
-        `;
+            <label for="salutation">Salutation</label>
+            <select class="salutation" name="salutation" required>
+              <option value="" selected disabled>Select</option>
+              <option value="Mr.">Mr.</option>
+              <option value="Mrs.">Mrs.</option>
+            </select>
 
+            <label for="name">Name</label>
+            <input type="text" class="name" name="name" required pattern="[A-Za-z\\s]+" title="Only letters and spaces allowed" placeholder="Your name">
+
+            <label for="email">Email</label>
+            <input type="email" class="email" name="email" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}$" title="Invalid email address" placeholder="you@example.com">
+
+            <label for="country_code">Country Code</label>
+            <input
+              type="tel"
+              class="country_code"
+              name="country_code"
+              placeholder="+91"
+              inputmode="tel"
+              pattern="^\\+[1-9]\\d{0,3}$"
+              title="Start with + and 1–4 digits (E.164 country code)">
+
+            <label for="phone">Phone Number</label>
+            <input
+              type="tel"
+              class="phone"
+              name="phone"
+              inputmode="tel"
+              pattern="^\\d{7,15}$"
+              title="Enter 7–15 digits (no spaces)"
+              placeholder="xxxxxxxxxx">
+
+            <input type="submit" class="submit" value="Submit">
+          `;
+
+          // Normalize & validate on typing
           formContainer.addEventListener("input", function () {
-            const inputs = formContainer.querySelectorAll("input");
+            const inputs = formContainer.querySelectorAll("input, select");
             const email = formContainer.querySelector(".email");
+            const cc = formContainer.querySelector(".country_code");
+
+            // normalize email
             if (email) email.value = email.value.toLowerCase();
+
+            // normalize country code: single leading '+', digits only after
+            if (cc) {
+              let val = cc.value.replace(/\s+/g, "");
+              const hasPlus = val.startsWith("+");
+              val = val.replace(/\+/g, "");
+              if (val.length) val = "+" + val.replace(/\D/g, "").slice(0, 4);
+              else if (hasPlus) val = "+";
+              cc.value = val;
+            }
 
             inputs.forEach((input) => {
               if (!input.value.trim() || input.checkValidity()) {
@@ -95,30 +152,44 @@
           formContainer.addEventListener("submit", function (event) {
             event.preventDefault();
 
+            const salutation = formContainer.querySelector(".salutation");
             const name = formContainer.querySelector(".name");
             const email = formContainer.querySelector(".email");
+            const cc = formContainer.querySelector(".country_code");
             const phone = formContainer.querySelector(".phone");
 
             if (email) email.value = email.value.toLowerCase();
 
             let hasError = false;
-            [name, email].forEach((input) => {
-              if (!input.checkValidity()) {
-                input.classList.add("invalid");
+
+            [salutation, name, email].forEach((el) => {
+              if (!el.checkValidity()) {
+                el.classList.add("invalid");
                 hasError = true;
               }
             });
 
+            const phoneProvided = phone && phone.value.trim().length > 0;
+            if (phoneProvided) {
+              if (!phone.checkValidity()) { phone.classList.add("invalid"); hasError = true; }
+              if (!cc.value.trim() || !cc.checkValidity()) { cc.classList.add("invalid"); hasError = true; }
+            }
+
             if (hasError) return;
+
+            const country_code = (cc.value || "").trim();
+            const phone_local = (phone.value || "").trim();
 
             formContainer.querySelector(".submit").remove();
 
             window.voiceflow.chat.interact({
               type: "complete",
               payload: {
+                salutation: salutation.value,
                 name: name.value.trim(),
                 email: email.value.trim(),
-                phone: phone.value.trim(),
+                countrycode: country_code,
+                phone: phone_local,
               },
             });
           });
@@ -129,36 +200,29 @@
     </script>
 
     <script type="text/javascript">
-      (function (d, t) {
-        var v = d.createElement(t),
-          s = d.getElementsByTagName(t)[0];
-        v.onload = function () {
-          const url = window.location.href;
-          window.voiceflow.chat.load({
-            verify: { projectID: "6880c6bb3411896930bfe4c6" },
-            url: "https://general-runtime.voiceflow.com",
-            versionID: "production",
-            launch: {
-              event: {
-                type: "launch",
-                payload: {
-                  browser_url: url,
-                },
-              },
-            },
-            assistant: {
-              extensions: [FormExtension],
-            },
-            voice: {
-              url: "https://runtime-api.voiceflow.com",
-            },
-          });
-        };
-        v.src = "https://cdn.voiceflow.com/widget-next/bundle.mjs";
-        v.type = "text/javascript";
-        s.parentNode.insertBefore(v, s);
-      })(document, "script");
+    (function (d, t) {
+      var v = d.createElement(t), s = d.getElementsByTagName(t)[0];
+      v.onload = function () {
+        window.voiceflow.chat.load({
+          verify: { projectID: "6880c6bb3411896930bfe4c6" },
+          url: "https://general-runtime.voiceflow.com",
+          versionID: "production",
+          launch: {
+            event: {
+              type: "launch",
+              payload: {
+                browser_url: window.location.href,
+                referrer: document.referrer || ""
+              }
+            }
+          },
+          assistant: { extensions: [FormExtension] },
+          voice: { url: "https://runtime-api.voiceflow.com" }
+        });
+      };
+      v.src = "https://cdn.voiceflow.com/widget-next/bundle.mjs";
+      v.type = "text/javascript"; s.parentNode.insertBefore(v, s);
+    })(document, "script");
     </script>
   </body>
 </html>
-
